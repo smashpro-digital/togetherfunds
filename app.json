@@ -14,6 +14,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.smashprodigital.togetherfunds",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0F2A23"
       }
