@@ -7,6 +7,10 @@
     "orientation": "portrait",
     "scheme": "togetherfunds",
     "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0F2A23",
+      "resizeMode": "contain"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
