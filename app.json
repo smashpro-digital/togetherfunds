@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Deeper Than Skin",
+    "slug": "togetherfunds",
+    "owner": "smashpro-digital-llc",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "togetherfunds",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F2A23"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6b105955-2410-4766-87d2-45bcce1b4c8a"
+      }
+    }
+  }
+}
