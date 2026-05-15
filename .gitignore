@@ -1,7 +1,10 @@
 node_modules/
 .expo/
+.eas-inspect/
 dist/
 web-build/
+eas-build-*.log
+eas-build-view.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
