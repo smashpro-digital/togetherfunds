@@ -1,68 +1,69 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { StyleSheet } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { colors } from "../theme";
-import { HomeScreen } from "../screens/HomeScreen";
-import { RitualsScreen } from "../screens/RitualsScreen";
-import { ShopScreen } from "../screens/ShopScreen";
-import { ServicesScreen } from "../screens/ServicesScreen";
-import { MembershipScreen } from "../screens/MembershipScreen";
-import { useCart } from "../state/CartContext";
+import { ContributionScreen } from "../screens/ContributionScreen";
+import { DashboardScreen } from "../screens/DashboardScreen";
+import { ExpenseFormScreen } from "../screens/ExpenseFormScreen";
+import { ExpensesScreen } from "../screens/ExpensesScreen";
+import { PartnerSummaryScreen } from "../screens/PartnerSummaryScreen";
+import { PiggyBankFormScreen } from "../screens/PiggyBankFormScreen";
+import { PiggyBanksScreen } from "../screens/PiggyBanksScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
+import { RootStackParamList, TabParamList } from "./types";
 
-export type RootTabParamList = {
-  Home: undefined;
-  Rituals: undefined;
-  Shop: undefined;
-  Services: undefined;
-  Membership: undefined;
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tabs = createBottomTabNavigator<TabParamList>();
+
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.background,
+    card: colors.surface,
+    primary: colors.primary,
+    text: colors.ink
+  }
 };
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
-
-export function AppNavigator() {
-  const { totalItems } = useCart();
-
+function TabNavigator() {
   return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: colors.forest,
-          tabBarInactiveTintColor: colors.stone,
-          tabBarStyle: styles.tabBar,
-          tabBarItemStyle: styles.tab,
-          tabBarLabelStyle: styles.tabText
-        }}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Rituals" component={RitualsScreen} />
-        <Tab.Screen
-          name="Shop"
-          component={ShopScreen}
-          options={{ tabBarLabel: totalItems > 0 ? `Shop (${totalItems})` : "Shop" }}
-        />
-        <Tab.Screen name="Services" component={ServicesScreen} />
-        <Tab.Screen name="Membership" component={MembershipScreen} options={{ tabBarLabel: "Member" }} />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <Tabs.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.background },
+        headerTitleStyle: { color: colors.ink, fontWeight: "900" },
+        tabBarActiveTintColor: colors.primaryDark,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.line
+        }
+      }}
+    >
+      <Tabs.Screen name="Dashboard" component={DashboardScreen} options={{ title: "Home" }} />
+      <Tabs.Screen name="Expenses" component={ExpensesScreen} />
+      <Tabs.Screen name="PiggyBanks" component={PiggyBanksScreen} options={{ title: "Piggy Banks" }} />
+      <Tabs.Screen name="PartnerSummary" component={PartnerSummaryScreen} options={{ title: "Partners" }} />
+      <Tabs.Screen name="Settings" component={SettingsScreen} />
+    </Tabs.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.forest,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(245, 241, 232, 0.12)",
-    minHeight: 72,
-    paddingTop: 8,
-    paddingBottom: 12
-  },
-  tab: {
-    borderRadius: 8,
-    marginHorizontal: 2
-  },
-  tabText: {
-    fontSize: 11,
-    fontWeight: "600"
-  }
-});
+export function AppNavigator() {
+  return (
+    <NavigationContainer theme={theme}>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.background },
+          headerTitleStyle: { color: colors.ink, fontWeight: "900" },
+          headerTintColor: colors.primaryDark
+        }}
+      >
+        <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+        <Stack.Screen name="ExpenseForm" component={ExpenseFormScreen} options={{ title: "Expense" }} />
+        <Stack.Screen name="PiggyBankForm" component={PiggyBankFormScreen} options={{ title: "Piggy Bank" }} />
+        <Stack.Screen name="Contribution" component={ContributionScreen} options={{ title: "Add Contribution" }} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}

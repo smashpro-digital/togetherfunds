@@ -1,3 +1,3 @@
 # Assets
 
-Place production image, icon, splash, and product assets in this folder.
+Place TogetherFunds production image, icon, and splash assets in this folder.

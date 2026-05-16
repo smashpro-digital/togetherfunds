@@ -1,4 +1,4 @@
-# Run And Test
+# Run And Test TogetherFunds
 
 ## 1. Install Dependencies
 
@@ -9,7 +9,13 @@ npm install
 ## 2. Start Expo
 
 ```bash
-npx expo start --tunnel
+npx expo start --tunnel --clear
+```
+
+If the tunnel is slow or ngrok times out, use LAN mode while your phone and computer are on the same Wi-Fi:
+
+```bash
+npx expo start --lan --clear
 ```
 
 ## 3. Test With Expo Go
@@ -17,13 +23,21 @@ npx expo start --tunnel
 1. Install Expo Go on your phone.
 2. Open the Expo Go app.
 3. Scan the QR code from the terminal or Expo browser window.
-4. Confirm the app opens to the Deeper Than Skin homepage.
+4. Confirm the app opens to the TogetherFunds dashboard.
 
 ## 4. Smoke Test Checklist
 
-- Home screen loads.
-- Bottom navigation switches between Home, Rituals, Shop, Services, and Membership.
-- Product cards can add items to cart.
-- Cart count updates in the Shop tab label.
-- Services screen shows ionic foot detox booking details.
-- Membership screen shows Weekly Renewal and Total Reset plans.
+- Dashboard loads with monthly remaining, bill count, and piggy bank totals.
+- Monthly Expenses shows Rent, Utilities, and Groceries demo data.
+- Piggy Banks shows Car Service with progress toward $600.
+- Add/Edit Expense can create and update a monthly bill.
+- Add/Edit Piggy Bank can create and update a savings goal.
+- Add Contribution updates saved amount and partner contribution totals.
+- Partner Summary shows Partner A and Partner B totals.
+- Settings can reset demo data.
+
+## 5. Future Android Preview Build
+
+```bash
+eas build --platform android --profile preview
+```
