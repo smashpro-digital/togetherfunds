@@ -11,13 +11,13 @@ type Props = NativeStackScreenProps<RootStackParamList, "Welcome">;
 export function WelcomeScreen({ navigation }: Props) {
   return (
     <Screen
-      eyebrow="SmashPro account"
+      eyebrow="TogetherFunds account"
       title="Welcome to TogetherFunds"
-      subtitle="Use one SmashPro login across TogetherFunds and future SmashPro apps."
+      subtitle="Use one account to keep your TogetherFunds workspace and preferences connected."
     >
       <Card>
         <Text selectable style={{ color: colors.muted, fontSize: 15, lineHeight: 22 }}>
-          Sign in to sync your couple workspace, preferences, and app-specific settings. Local demo mode still works
+          Sign in to sync your couple workspace, preferences, and app settings. Local demo mode still works
           without live server data.
         </Text>
         <AppButton label="Log in" onPress={() => navigation.navigate("Login")} />

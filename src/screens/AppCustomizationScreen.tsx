@@ -35,7 +35,7 @@ export function AppCustomizationScreen() {
   }
 
   return (
-    <Screen title="App Customization" subtitle="TogetherFunds-specific preferences for your shared SmashPro account.">
+    <Screen title="App Customization" subtitle="Personalize how TogetherFunds works for you.">
       <Card>
         <FormField label="Display name" value={displayName} onChangeText={setDisplayName} />
         <FormField label="Preferred currency" value={currency} onChangeText={setCurrency} autoCapitalize="characters" />

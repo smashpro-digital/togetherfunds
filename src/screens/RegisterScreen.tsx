@@ -37,7 +37,7 @@ export function RegisterScreen({ navigation }: Props) {
   }
 
   return (
-    <Screen title="Create account" subtitle="Create one SmashPro account for every SmashPro app.">
+    <Screen title="Create account" subtitle="Create your TogetherFunds account.">
       <Card>
         <FormField label="Display name" value={displayName} onChangeText={setDisplayName} />
         <FormField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />

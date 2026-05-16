@@ -8,7 +8,7 @@ export function ProfileScreen() {
   const { user, activeAppKey, tenantKey, logout } = useAuthStore();
 
   return (
-    <Screen title="Profile" subtitle="Shared SmashPro account details for this app session.">
+    <Screen title="Profile" subtitle="Your TogetherFunds account details for this app session.">
       <Card>
         <MoneyRow label="Name" value={user?.name || "Not set"} />
         <MoneyRow label="Username" value={user?.username || "Not set"} />

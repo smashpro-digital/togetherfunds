@@ -24,7 +24,7 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <Screen title="Log in" subtitle="Access your shared SmashPro account.">
+    <Screen title="Log in" subtitle="Access your TogetherFunds account.">
       <Card>
         <FormField label="Email or username" value={loginValue} onChangeText={setLoginValue} autoCapitalize="none" />
         <FormField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />

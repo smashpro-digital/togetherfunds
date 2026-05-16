@@ -87,7 +87,7 @@ export function SettingsScreen() {
         <MoneyRow label="App Key" value={activeAppKey || appConfig.appKey} />
         <MoneyRow label="Tenant Key" value={tenantKey || appConfig.tenantKey} />
         <Text selectable style={styles.body}>
-          Local Demo Mode keeps Expo Go fully offline. Server Sync Mode prepares the app to call the SmashPro PHP API.
+          Local Demo Mode keeps Expo Go fully offline. Server Sync Mode prepares the app to sync with the secure backend.
         </Text>
         <View style={styles.segment}>
           <ModeOption label="Local Demo Mode" selected={mode === "local"} onPress={() => setSyncMode("local")} />
@@ -111,7 +111,7 @@ export function SettingsScreen() {
       </Card>
       <Card>
         <Text selectable style={styles.title}>
-          SmashPro account
+          Account
         </Text>
         <MoneyRow label="User" value={user?.name || preferences?.display_name || "Not set"} />
         <MoneyRow label="Email" value={user?.email || "Not set"} />

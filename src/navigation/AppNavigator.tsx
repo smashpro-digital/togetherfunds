@@ -66,7 +66,7 @@ export function AppNavigator() {
 
   if (isLoading) {
     return (
-      <Screen title="TogetherFunds" subtitle="Checking your SmashPro session.">
+      <Screen title="TogetherFunds" subtitle="Checking your account session.">
         <Card>
           <Text style={{ color: colors.muted }}>Loading account...</Text>
         </Card>
