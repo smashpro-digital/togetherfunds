@@ -12,3 +12,7 @@ yarn-error.log*
 .DS_Store
 *.local
 *.log
+api/config.local.php
+api/.env
+api/logs/
+api/**/*secret*
