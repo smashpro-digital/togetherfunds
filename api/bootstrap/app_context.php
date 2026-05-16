@@ -172,6 +172,305 @@ function tf_list(string $table, array $context, ?int $coupleId = null): array {
   return $stmt->fetchAll() ?: [];
 }
 
+function user_public_row(array $row): array {
+  return [
+    "id" => (int)$row["id"],
+    "email" => $row["email"] ?? null,
+    "username" => $row["username"] ?? null,
+    "name" => $row["name"] ?? null,
+    "first_name" => $row["first_name"] ?? null,
+    "last_name" => $row["last_name"] ?? null,
+  ];
+}
+
+function load_preferences(int $userId): array {
+  $stmt = db()->prepare("SELECT * FROM spd_user_preferences WHERE user_id = :user_id AND deleted_at IS NULL LIMIT 1");
+  $stmt->execute([":user_id" => $userId]);
+  return $stmt->fetch() ?: [];
+}
+
+function load_app_settings(int $userId, array $context): array {
+  $stmt = db()->prepare("
+    SELECT * FROM spd_user_app_settings
+    WHERE user_id = :user_id AND app_key = :app_key AND tenant_key = :tenant_key AND deleted_at IS NULL
+    LIMIT 1
+  ");
+  $stmt->execute([":user_id" => $userId, ":app_key" => $context["app_key"], ":tenant_key" => $context["tenant_key"]]);
+  return $stmt->fetch() ?: [];
+}
+
+function create_session(int $userId, array $context): array {
+  $token = generate_session_token();
+  $refresh = generate_session_token();
+  $expiresAt = session_expires_at();
+
+  $stmt = db()->prepare("
+    INSERT INTO spd_user_sessions
+      (user_id, app_key, tenant_key, token_hash, refresh_token_hash, expires_at)
+    VALUES
+      (:user_id, :app_key, :tenant_key, UNHEX(:token_hash), UNHEX(:refresh_hash), :expires_at)
+  ");
+  $stmt->execute([
+    ":user_id" => $userId,
+    ":app_key" => $context["app_key"],
+    ":tenant_key" => $context["tenant_key"],
+    ":token_hash" => token_hash_hex($token),
+    ":refresh_hash" => token_hash_hex($refresh),
+    ":expires_at" => $expiresAt,
+  ]);
+
+  return ["session_token" => $token, "refresh_token" => $refresh, "expires_at" => $expiresAt];
+}
+
+function ensure_app_membership(int $userId, array $context, string $role = "member"): void {
+  $stmt = db()->prepare("
+    INSERT INTO spd_user_app_memberships (user_id, app_key, tenant_key, role, status)
+    VALUES (:user_id, :app_key, :tenant_key, :role, 'active')
+    ON DUPLICATE KEY UPDATE role = VALUES(role), status = 'active', deleted_at = NULL
+  ");
+  $stmt->execute([
+    ":user_id" => $userId,
+    ":app_key" => $context["app_key"],
+    ":tenant_key" => $context["tenant_key"],
+    ":role" => $role,
+  ]);
+}
+
+function handle_auth_register_post(): void {
+  $context = route_bootstrap("POST", true);
+  $email = strtolower((string)body_string($context, "email"));
+  $username = body_string($context, "username", false);
+  $password = (string)body_string($context, "password");
+  $displayName = body_string($context, "display_name", false) ?? $email;
+
+  if (strlen($password) < 8) fail_json("Password must be at least 8 characters", 400);
+
+  $existing = db()->prepare("SELECT id FROM spd_user_credentials WHERE email = :email OR (username IS NOT NULL AND username = :username) LIMIT 1");
+  $existing->execute([":email" => $email, ":username" => $username]);
+  if ($existing->fetch()) fail_json("Account already exists", 409);
+
+  $stmt = db()->prepare("INSERT INTO spd_users (email, name, auth_provider, last_seen_app, app_source) VALUES (:email, :name, 'local', :app_key, 'mobile')");
+  $stmt->execute([":email" => $email, ":name" => $displayName, ":app_key" => $context["app_key"]]);
+  $userId = (int)db()->lastInsertId();
+
+  $cred = db()->prepare("
+    INSERT INTO spd_user_credentials (user_id, username, email, password_hash)
+    VALUES (:user_id, :username, :email, :password_hash)
+  ");
+  $cred->execute([
+    ":user_id" => $userId,
+    ":username" => $username,
+    ":email" => $email,
+    ":password_hash" => password_hash($password, PASSWORD_DEFAULT),
+  ]);
+
+  ensure_app_membership($userId, $context, "member");
+  $pref = db()->prepare("INSERT INTO spd_user_preferences (user_id, display_name, preferred_currency) VALUES (:user_id, :display_name, 'USD')");
+  $pref->execute([":user_id" => $userId, ":display_name" => $displayName]);
+
+  $session = create_session($userId, $context);
+  json_ok(array_merge([
+    "user" => user_public_row(["id" => $userId, "email" => $email, "username" => $username, "name" => $displayName]),
+    "preferences" => load_preferences($userId),
+    "app_settings" => load_app_settings($userId, $context),
+    "tenant_key" => $context["tenant_key"],
+  ], $session), 201);
+}
+
+function handle_auth_login_post(): void {
+  $context = route_bootstrap("POST", true);
+  $login = strtolower((string)body_string($context, "login"));
+  $password = (string)body_string($context, "password");
+
+  $stmt = db()->prepare("
+    SELECT c.*, u.name, u.first_name, u.last_name
+    FROM spd_user_credentials c
+    JOIN spd_users u ON u.id = c.user_id
+    WHERE c.deleted_at IS NULL AND (c.email = :login OR c.username = :login)
+    LIMIT 1
+  ");
+  $stmt->execute([":login" => $login]);
+  $cred = $stmt->fetch();
+  if (!$cred || !password_verify($password, (string)$cred["password_hash"])) {
+    fail_json("Invalid login", 401);
+  }
+
+  ensure_app_membership((int)$cred["user_id"], $context, "member");
+  $session = create_session((int)$cred["user_id"], $context);
+  json_ok(array_merge([
+    "user" => user_public_row(["id" => $cred["user_id"], "email" => $cred["email"], "username" => $cred["username"], "name" => $cred["name"], "first_name" => $cred["first_name"], "last_name" => $cred["last_name"]]),
+    "preferences" => load_preferences((int)$cred["user_id"]),
+    "app_settings" => load_app_settings((int)$cred["user_id"], $context),
+    "tenant_key" => $context["tenant_key"],
+  ], $session));
+}
+
+function handle_auth_me_get(): void {
+  $context = route_bootstrap("GET", true);
+  $sessionUser = require_session_user($context);
+  $userId = (int)$sessionUser["user_id"];
+  json_ok([
+    "user" => user_public_row(["id" => $userId, "email" => $sessionUser["email"], "username" => $sessionUser["username"] ?? null, "name" => $sessionUser["name"], "first_name" => $sessionUser["first_name"], "last_name" => $sessionUser["last_name"]]),
+    "preferences" => load_preferences($userId),
+    "app_settings" => load_app_settings($userId, $context),
+    "tenant_key" => $context["tenant_key"],
+    "app_key" => $context["app_key"],
+  ]);
+}
+
+function handle_auth_logout_post(): void {
+  $context = route_bootstrap("POST", true);
+  $token = bearer_token();
+  if ($token) {
+    $stmt = db()->prepare("UPDATE spd_user_sessions SET revoked_at = NOW() WHERE token_hash = UNHEX(:token_hash) AND app_key = :app_key");
+    $stmt->execute([":token_hash" => token_hash_hex($token), ":app_key" => $context["app_key"]]);
+  }
+  json_ok(["logged_out" => true]);
+}
+
+function handle_auth_refresh_post(): void {
+  $context = route_bootstrap("POST", true);
+  $body = $context["body"];
+  $refresh = trim((string)($body["refresh_token"] ?? ""));
+  if ($refresh === "") fail_json("refresh_token is required", 400);
+
+  $stmt = db()->prepare("
+    SELECT user_id FROM spd_user_sessions
+    WHERE refresh_token_hash = UNHEX(:refresh_hash)
+      AND app_key = :app_key
+      AND revoked_at IS NULL
+      AND expires_at > NOW()
+    LIMIT 1
+  ");
+  $stmt->execute([":refresh_hash" => token_hash_hex($refresh), ":app_key" => $context["app_key"]]);
+  $row = $stmt->fetch();
+  if (!$row) fail_json("Invalid refresh token", 401);
+
+  $session = create_session((int)$row["user_id"], $context);
+  json_ok($session);
+}
+
+function handle_user_preferences_get(): void {
+  $context = route_bootstrap("GET", true);
+  $user = require_session_user($context);
+  json_ok(["preferences" => load_preferences((int)$user["user_id"])]);
+}
+
+function handle_user_preferences_put(): void {
+  $context = route_bootstrap("PUT", true);
+  $user = require_session_user($context);
+  $userId = (int)$user["user_id"];
+  $body = $context["body"];
+  $stmt = db()->prepare("
+    INSERT INTO spd_user_preferences
+      (user_id, display_name, preferred_currency, theme_mode, accent_color, notification_preferences)
+    VALUES
+      (:user_id, :display_name, :preferred_currency, :theme_mode, :accent_color, :notification_preferences)
+    ON DUPLICATE KEY UPDATE
+      display_name = VALUES(display_name),
+      preferred_currency = VALUES(preferred_currency),
+      theme_mode = VALUES(theme_mode),
+      accent_color = VALUES(accent_color),
+      notification_preferences = VALUES(notification_preferences),
+      deleted_at = NULL
+  ");
+  $stmt->execute([
+    ":user_id" => $userId,
+    ":display_name" => $body["display_name"] ?? null,
+    ":preferred_currency" => $body["preferred_currency"] ?? "USD",
+    ":theme_mode" => $body["theme_mode"] ?? "system",
+    ":accent_color" => $body["accent_color"] ?? null,
+    ":notification_preferences" => isset($body["notification_preferences"]) ? json_encode($body["notification_preferences"]) : null,
+  ]);
+  json_ok(["preferences" => load_preferences($userId)]);
+}
+
+function handle_user_app_settings_get(): void {
+  $context = route_bootstrap("GET", true);
+  $user = require_session_user($context);
+  json_ok(["app_settings" => load_app_settings((int)$user["user_id"], $context)]);
+}
+
+function handle_user_app_settings_put(): void {
+  $context = route_bootstrap("PUT", true);
+  $user = require_session_user($context);
+  $body = $context["body"];
+  $stmt = db()->prepare("
+    INSERT INTO spd_user_app_settings
+      (user_id, app_key, tenant_key, dashboard_layout, envelope_style, default_budget_period, settings_json)
+    VALUES
+      (:user_id, :app_key, :tenant_key, :dashboard_layout, :envelope_style, :default_budget_period, :settings_json)
+    ON DUPLICATE KEY UPDATE
+      dashboard_layout = VALUES(dashboard_layout),
+      envelope_style = VALUES(envelope_style),
+      default_budget_period = VALUES(default_budget_period),
+      settings_json = VALUES(settings_json),
+      deleted_at = NULL
+  ");
+  $stmt->execute([
+    ":user_id" => (int)$user["user_id"],
+    ":app_key" => $context["app_key"],
+    ":tenant_key" => $context["tenant_key"],
+    ":dashboard_layout" => $body["dashboard_layout"] ?? "default",
+    ":envelope_style" => $body["envelope_style"] ?? "classic",
+    ":default_budget_period" => $body["default_budget_period"] ?? "monthly",
+    ":settings_json" => isset($body["settings_json"]) ? json_encode($body["settings_json"]) : null,
+  ]);
+  json_ok(["app_settings" => load_app_settings((int)$user["user_id"], $context)]);
+}
+
+function handle_invites_create_post(): void {
+  $context = route_bootstrap("POST", true);
+  $user = require_session_user($context);
+  $coupleId = body_int($context, "couple_id", false) ?? tf_couple_id($context);
+  $code = strtoupper(substr(bin2hex(random_bytes(6)), 0, 10));
+  $id = tf_insert("spd_tf_couple_invites", [
+    "app_key" => $context["app_key"],
+    "tenant_key" => $context["tenant_key"],
+    "couple_id" => $coupleId,
+    "invite_code" => $code,
+    "role" => body_string($context, "role", false) ?? "partner",
+    "created_by_user_id" => (int)$user["user_id"],
+    "expires_at" => gmdate("Y-m-d H:i:s", time() + (60 * 60 * 24 * 7)),
+  ]);
+  json_ok(["id" => $id, "invite_code" => $code], 201);
+}
+
+function handle_invites_accept_post(): void {
+  $context = route_bootstrap("POST", true);
+  $user = require_session_user($context);
+  $code = strtoupper((string)body_string($context, "invite_code"));
+  $stmt = db()->prepare("
+    SELECT * FROM spd_tf_couple_invites
+    WHERE invite_code = :code
+      AND app_key = :app_key
+      AND deleted_at IS NULL
+      AND accepted_at IS NULL
+      AND (expires_at IS NULL OR expires_at > NOW())
+    LIMIT 1
+  ");
+  $stmt->execute([":code" => $code, ":app_key" => $context["app_key"]]);
+  $invite = $stmt->fetch();
+  if (!$invite) fail_json("Invite not found", 404);
+
+  $link = db()->prepare("
+    INSERT INTO spd_tf_user_couple_links (app_key, tenant_key, user_id, couple_id, role, status)
+    VALUES (:app_key, :tenant_key, :user_id, :couple_id, :role, 'active')
+    ON DUPLICATE KEY UPDATE role = VALUES(role), status = 'active', deleted_at = NULL
+  ");
+  $link->execute([
+    ":app_key" => $invite["app_key"],
+    ":tenant_key" => $invite["tenant_key"],
+    ":user_id" => (int)$user["user_id"],
+    ":couple_id" => (int)$invite["couple_id"],
+    ":role" => $invite["role"],
+  ]);
+
+  $update = db()->prepare("UPDATE spd_tf_couple_invites SET accepted_by_user_id = :user_id, accepted_at = NOW() WHERE id = :id");
+  $update->execute([":user_id" => (int)$user["user_id"], ":id" => (int)$invite["id"]]);
+  json_ok(["couple_id" => (int)$invite["couple_id"], "tenant_key" => $invite["tenant_key"], "role" => $invite["role"]]);
+}
+
 function handle_app_context_get(): void {
   $context = route_bootstrap("GET", false);
   json_ok(["app" => $context["app"], "tenant" => $context["tenant"]]);
@@ -212,12 +511,26 @@ function handle_couples_get(): void {
 
 function handle_couples_post(): void {
   $context = route_bootstrap("POST", true);
+  $user = bearer_token() ? require_session_user($context) : null;
   $id = tf_insert("spd_tf_couples", [
     "app_key" => $context["app_key"],
     "tenant_key" => $context["tenant_key"],
     "display_name" => body_string($context, "display_name"),
     "currency" => body_string($context, "currency", false) ?? "USD",
   ]);
+  if ($user) {
+    $link = db()->prepare("
+      INSERT INTO spd_tf_user_couple_links (app_key, tenant_key, user_id, couple_id, role, status)
+      VALUES (:app_key, :tenant_key, :user_id, :couple_id, 'owner', 'active')
+      ON DUPLICATE KEY UPDATE role = 'owner', status = 'active', deleted_at = NULL
+    ");
+    $link->execute([
+      ":app_key" => $context["app_key"],
+      ":tenant_key" => $context["tenant_key"],
+      ":user_id" => (int)$user["user_id"],
+      ":couple_id" => $id,
+    ]);
+  }
   json_ok(["id" => $id], 201);
 }
 

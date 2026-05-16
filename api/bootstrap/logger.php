@@ -8,7 +8,7 @@ declare(strict_types=1);
  */
 
 function redact_headers(array $headers): array {
-  $redactKeys = ["authorization", "x-api-key", "cookie"];
+  $redactKeys = ["authorization", "x-api-key", "x-smashpro-api-key", "cookie"];
 
   $out = [];
   foreach ($headers as $k => $v) {

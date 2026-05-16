@@ -7,9 +7,19 @@ type FormFieldProps = {
   onChangeText: (value: string) => void;
   placeholder?: string;
   keyboardType?: KeyboardTypeOptions;
+  secureTextEntry?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 };
 
-export function FormField({ label, value, onChangeText, placeholder, keyboardType = "default" }: FormFieldProps) {
+export function FormField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = "default",
+  secureTextEntry = false,
+  autoCapitalize = "sentences"
+}: FormFieldProps) {
   return (
     <View style={styles.wrap}>
       <Text selectable style={styles.label}>
@@ -21,7 +31,10 @@ export function FormField({ label, value, onChangeText, placeholder, keyboardTyp
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
         keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
         style={styles.input}
+        selectionColor={colors.gold}
       />
     </View>
   );
@@ -29,7 +42,7 @@ export function FormField({ label, value, onChangeText, placeholder, keyboardTyp
 
 const styles = StyleSheet.create({
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.backgroundDeep,
     borderColor: colors.line,
     borderRadius: radii.md,
     borderWidth: 1,
@@ -39,7 +52,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13
   },
   label: {
-    color: colors.ink,
+    color: colors.primaryDark,
     fontSize: 14,
     fontWeight: "800"
   },

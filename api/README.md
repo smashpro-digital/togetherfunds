@@ -35,12 +35,16 @@ Routes are explicit files under `v1/routes`:
 - `app.context.get.php`
 - `app.features.get.php`
 - `app.components.get.php`
+- `auth.register.post.php`, `auth.login.post.php`, `auth.me.get.php`, `auth.logout.post.php`, `auth.refresh.post.php`
+- `user.preferences.get.php`, `user.preferences.put.php`
+- `user.app-settings.get.php`, `user.app-settings.put.php`
 - `togetherfunds.couples.get.php`, `togetherfunds.couples.post.php`
 - `togetherfunds.expenses.get.php`, `togetherfunds.expenses.post.php`, `togetherfunds.expenses.put.php`, `togetherfunds.expenses.delete.php`
 - `togetherfunds.piggy-banks.get.php`, `togetherfunds.piggy-banks.post.php`, `togetherfunds.piggy-banks.put.php`, `togetherfunds.piggy-banks.delete.php`
 - `togetherfunds.contributions.get.php`, `togetherfunds.contributions.post.php`, `togetherfunds.contributions.put.php`, `togetherfunds.contributions.delete.php`
 - `togetherfunds.bank-accounts.get.php`, `togetherfunds.bank-accounts.post.php`, `togetherfunds.bank-accounts.delete.php`
 - `togetherfunds.transactions.get.php`, `togetherfunds.transactions.post.php`, `togetherfunds.transactions.assign.post.php`
+- `togetherfunds.invites.create.post.php`, `togetherfunds.invites.accept.post.php`
 
 All endpoints return JSON and require:
 
@@ -48,6 +52,7 @@ All endpoints return JSON and require:
 X-SmashPro-Api-Key: your-server-api-key
 X-SmashPro-App-Key: togetherfunds
 X-SmashPro-Tenant-Key: demo-couple
+Authorization: Bearer session-token-for-user-routes
 ```
 
 ## Tenant Model
@@ -65,6 +70,21 @@ Feature controls live in:
 
 - `spd_app_features`
 - `spd_app_feature_flags`
+
+## Shared Identity
+
+TogetherFunds uses one SmashPro identity across apps:
+
+- `spd_users` stores the shared user profile.
+- `spd_user_credentials` stores local email/username password hashes when the shared schema does not already provide credential storage.
+- `spd_user_app_memberships` links one user to one or more SmashPro apps and tenants.
+- `spd_user_sessions` stores hashed session and refresh tokens only.
+- `spd_user_preferences` stores cross-app display preferences.
+- `spd_user_app_settings` stores TogetherFunds-specific customization such as dashboard layout, envelope style, and default budget period.
+- `spd_tf_user_couple_links` links users to TogetherFunds couple workspaces.
+- `spd_tf_couple_invites` supports invite-code joins.
+
+Login endpoints still require `X-SmashPro-Api-Key` and `X-SmashPro-App-Key`. Authenticated user routes also require `Authorization: Bearer <session_token>`. Rate limiting for login/register should be added at the server or WAF layer before production.
 
 ## Plaid Security Notes
 

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appConfig } from "../config/appConfig";
+import { getSessionToken } from "./sessionStorage";
 
 const CACHE_PREFIX = "togetherfunds:api-cache:";
 
@@ -36,16 +37,22 @@ async function writeCache<T>(cacheKey: string | undefined, data: T): Promise<voi
 
 async function request<T>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: string, options: RequestOptions = {}): Promise<ApiResult<T>> {
   const url = `${baseUrl}/${endpoint.replace(/^\//, "")}`;
+  const sessionToken = await getSessionToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-SmashPro-Api-Key": appConfig.apiKey,
+    "X-SmashPro-App-Key": appConfig.appKey,
+    "X-SmashPro-Tenant-Key": appConfig.tenantKey,
+  };
+
+  if (sessionToken) {
+    headers.Authorization = `Bearer ${sessionToken}`;
+  }
 
   try {
     const response = await fetch(url, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        "X-SmashPro-Api-Key": appConfig.apiKey,
-        "X-SmashPro-App-Key": appConfig.appKey,
-        "X-SmashPro-Tenant-Key": appConfig.tenantKey,
-      },
+      headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
 

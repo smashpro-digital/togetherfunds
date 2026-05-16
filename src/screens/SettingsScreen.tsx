@@ -10,6 +10,7 @@ import { RootStackParamList } from "../navigation/types";
 import { Screen } from "../components/Screen";
 import { getApiHealth, getAppFeatures } from "../services/togetherFundsApi";
 import { useFunds } from "../state/FundsContext";
+import { useAuthStore } from "../store/authStore";
 import { setSyncMode, useSyncMode } from "../store/syncModeStore";
 import { colors, radii, spacing } from "../theme";
 
@@ -18,6 +19,7 @@ type Navigation = NativeStackScreenProps<RootStackParamList>["navigation"];
 export function SettingsScreen() {
   const navigation = useNavigation<Navigation>();
   const { mode } = useSyncMode();
+  const { activeAppKey, tenantKey, user, preferences, appSettings, logout } = useAuthStore();
   const { expenses, piggyBanks, resetDemoData } = useFunds();
   const [apiStatus, setApiStatus] = useState("Not checked");
   const [features, setFeatures] = useState<string[]>([]);
@@ -56,8 +58,8 @@ export function SettingsScreen() {
         <Text selectable style={styles.title}>
           Sync mode
         </Text>
-        <MoneyRow label="App Key" value={appConfig.appKey} />
-        <MoneyRow label="Tenant Key" value={appConfig.tenantKey} />
+        <MoneyRow label="App Key" value={activeAppKey || appConfig.appKey} />
+        <MoneyRow label="Tenant Key" value={tenantKey || appConfig.tenantKey} />
         <Text selectable style={styles.body}>
           Local Demo Mode keeps Expo Go fully offline. Server Sync Mode prepares the app to call the SmashPro PHP API.
         </Text>
@@ -76,6 +78,20 @@ export function SettingsScreen() {
           </View>
         ) : null}
         <AppButton label="Check API health" variant="secondary" onPress={checkApiHealth} />
+      </Card>
+      <Card>
+        <Text selectable style={styles.title}>
+          SmashPro account
+        </Text>
+        <MoneyRow label="User" value={user?.name || preferences?.display_name || "Not set"} />
+        <MoneyRow label="Email" value={user?.email || "Not set"} />
+        <MoneyRow label="Username" value={user?.username || "Not set"} />
+        <MoneyRow label="Couple workspace" value={tenantKey || "Not set"} />
+        <MoneyRow label="Dashboard layout" value={appSettings?.dashboard_layout || "couple_overview"} />
+        <MoneyRow label="Envelope style" value={appSettings?.envelope_style || "classic"} />
+        <AppButton label="Profile" variant="secondary" onPress={() => navigation.navigate("Profile")} />
+        <AppButton label="App customization" variant="secondary" onPress={() => navigation.navigate("AppCustomization")} />
+        <AppButton label="Log out" variant="danger" onPress={logout} />
       </Card>
       <Card>
         <Text selectable style={styles.title}>

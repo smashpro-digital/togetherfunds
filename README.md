@@ -60,6 +60,7 @@ TogetherFunds is scaffolded to fit the SmashPro shared app architecture. The bac
 - `spd_app_feature_flags` for tenant-level feature overrides
 - `spd_app_component_registry` and `spd_app_component_configs` for reusable app components
 - `spd_tf_*` tables for TogetherFunds-specific couples, expenses, envelopes, contributions, bank metadata, and transaction assignments
+- `spd_users` plus shared membership, session, preference, and app-setting tables for reusable SmashPro login
 - `spd_api_keys` and `spd_api_error_logs` for shared auth and API logging
 
 The Expo client sends these headers on server requests:
@@ -68,9 +69,20 @@ The Expo client sends these headers on server requests:
 X-SmashPro-Api-Key
 X-SmashPro-App-Key: togetherfunds
 X-SmashPro-Tenant-Key: demo-couple
+Authorization: Bearer <session_token>
 ```
 
 Server Sync Mode in Settings shows the app key, tenant key, API health, and feature flags returned by the server.
+
+## Shared SmashPro Login
+
+TogetherFunds uses one SmashPro account across apps. A user can register once, receive a TogetherFunds app membership, and keep app-specific preferences such as display name, currency, theme mode, dashboard layout, envelope style, and default budget period.
+
+- Passwords are hashed server-side with `password_hash()` and verified with `password_verify()`.
+- Raw session tokens are returned once and stored in the mobile app with `expo-secure-store`.
+- The database stores only hashed session and refresh tokens.
+- Logout revokes the server session and clears SecureStore.
+- Future OAuth/social login can attach to the same shared `spd_users` identity.
 
 See `docs/architecture/togetherfunds-platform-integration.md` for the platform integration notes based on the SmashPro schema export.
 
