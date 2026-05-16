@@ -74,6 +74,14 @@ Authorization: Bearer <session_token>
 
 Server Sync Mode in Settings shows the app key, tenant key, API health, and feature flags returned by the server.
 
+The temporary Auth Debug button in Settings calls:
+
+- `health.get.php`
+- `auth.debug.get.php`
+- `app.context.get.php`
+
+It shows HTTP status, server messages, endpoint URL, and missing auth tables/columns when returned.
+
 ## Shared SmashPro Login
 
 TogetherFunds uses one SmashPro account across apps. A user can register once, receive a TogetherFunds app membership, and keep app-specific preferences such as display name, currency, theme mode, dashboard layout, envelope style, and default budget period.

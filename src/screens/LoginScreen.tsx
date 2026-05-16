@@ -6,7 +6,7 @@ import { Card } from "../components/Card";
 import { FormField } from "../components/FormField";
 import { Screen } from "../components/Screen";
 import { RootStackParamList } from "../navigation/types";
-import { useAuthStore } from "../store/authStore";
+import { getAuthSnapshot, useAuthStore } from "../store/authStore";
 import { colors } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
@@ -19,7 +19,7 @@ export function LoginScreen({ navigation }: Props) {
   async function submit() {
     const ok = await login(loginValue.trim(), password);
     if (!ok) {
-      Alert.alert("Login failed", error ?? "Check your username/email and password.");
+      Alert.alert("Login failed", getAuthSnapshot().error ?? error ?? "Check your username/email and password.");
     }
   }
 

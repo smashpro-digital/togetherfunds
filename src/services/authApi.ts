@@ -41,7 +41,7 @@ export type MePayload = {
 };
 
 export function registerUser(input: { email: string; username?: string; password: string; display_name?: string }) {
-  return apiClient.post<AuthPayload>("auth.register.post.php", input);
+  return apiClient.post<AuthPayload>("auth.register.post.php", input, undefined, "auth.register");
 }
 
 export function loginUser(input: { login: string; password: string }) {

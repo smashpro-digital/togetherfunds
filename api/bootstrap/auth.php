@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function require_api_key(): void {
   $expected = (string)get_config_value("api.key", "");
-  $provided = (string)($_SERVER["HTTP_X_SMASHPRO_API_KEY"] ?? "");
+  $provided = (string)($_SERVER["HTTP_X_SMASHPRO_API_KEY"] ?? ($_SERVER["HTTP_X_API_KEY"] ?? ""));
 
   if ($provided === "") {
     fail_json("Unauthorized", 401);

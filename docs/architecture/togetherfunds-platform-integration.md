@@ -97,6 +97,7 @@ Auth and user endpoints:
 - `auth.me.get.php`
 - `auth.logout.post.php`
 - `auth.refresh.post.php`
+- `auth.debug.get.php`
 - `user.preferences.get.php`
 - `user.preferences.put.php`
 - `user.app-settings.get.php`
@@ -108,6 +109,7 @@ Auth and user endpoints:
 
 1. Import `api/sql/togetherfunds_schema.sql` in phpMyAdmin.
 2. Import `api/sql/togetherfunds_seed.sql`.
-3. Upload API files to `/public_html/smashpro.app/api/` so route files are under `/public_html/smashpro.app/api/v1/routes`.
-4. Configure server-only `api/config.local.php`.
-5. Set Expo public placeholders for base URL, app key, tenant key, and non-production API key during testing.
+3. Import `api/sql/togetherfunds_auth_migration.sql` if an existing database is missing auth tables or `spd_users` compatibility columns.
+4. Upload API files to `/public_html/smashpro.app/api/` so route files are under `/public_html/smashpro.app/api/v1/routes`.
+5. Configure server-only `api/config.local.php`.
+6. Set Expo public placeholders for base URL, app key, tenant key, and non-production API key during testing.

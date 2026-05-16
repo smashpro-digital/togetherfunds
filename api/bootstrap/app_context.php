@@ -18,7 +18,7 @@ function route_bootstrap(string $method, bool $tenantRequired = true, ?string $f
 }
 
 function require_app_key(): string {
-  $appKey = trim((string)($_SERVER["HTTP_X_SMASHPRO_APP_KEY"] ?? ""));
+  $appKey = trim((string)($_SERVER["HTTP_X_SMASHPRO_APP_KEY"] ?? ($_SERVER["HTTP_X_APP_KEY"] ?? ($_SERVER["HTTP_X_APP_SLUG"] ?? ""))));
   if ($appKey === "") fail_json("X-SmashPro-App-Key is required", 400);
   return $appKey;
 }
@@ -348,6 +348,64 @@ function handle_auth_refresh_post(): void {
 
   $session = create_session((int)$row["user_id"], $context);
   json_ok($session);
+}
+
+function table_exists(string $table): bool {
+  $stmt = db()->prepare("
+    SELECT COUNT(*) AS count
+    FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = :table
+  ");
+  $stmt->execute([":table" => $table]);
+  return (int)($stmt->fetch()["count"] ?? 0) > 0;
+}
+
+function column_exists(string $table, string $column): bool {
+  $stmt = db()->prepare("
+    SELECT COUNT(*) AS count
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = :table AND column_name = :column
+  ");
+  $stmt->execute([":table" => $table, ":column" => $column]);
+  return (int)($stmt->fetch()["count"] ?? 0) > 0;
+}
+
+function handle_auth_debug_get(): void {
+  $context = route_bootstrap("GET", false);
+  $ping = db()->query("SELECT 1 AS connected")->fetch();
+
+  $required = [
+    "spd_users" => ["id", "email", "name"],
+    "spd_user_credentials" => ["id", "user_id", "username", "email", "password_hash"],
+    "spd_user_sessions" => ["id", "user_id", "app_key", "tenant_key", "token_hash", "refresh_token_hash", "expires_at", "revoked_at"],
+    "spd_user_app_memberships" => ["id", "user_id", "app_key", "tenant_key", "role", "status"],
+    "spd_user_preferences" => ["id", "user_id", "display_name", "preferred_currency", "theme_mode", "accent_color"],
+    "spd_user_app_settings" => ["id", "user_id", "app_key", "tenant_key", "dashboard_layout", "envelope_style", "default_budget_period"],
+    "spd_tf_user_couple_links" => ["id", "app_key", "tenant_key", "user_id", "couple_id", "role"],
+    "spd_tf_couple_invites" => ["id", "app_key", "tenant_key", "couple_id", "invite_code", "role"],
+  ];
+
+  $tables = [];
+  foreach ($required as $table => $columns) {
+    $exists = table_exists($table);
+    $columnStatus = [];
+    foreach ($columns as $column) {
+      $columnStatus[$column] = $exists ? column_exists($table, $column) : false;
+    }
+    $tables[$table] = [
+      "exists" => $exists,
+      "columns" => $columnStatus,
+    ];
+  }
+
+  json_ok([
+    "bootstrap_loaded" => true,
+    "db_connected" => (bool)$ping,
+    "app_key" => $context["app_key"],
+    "app_recognized" => !empty($context["app"]),
+    "tenant_key" => $context["tenant_key"] ?: null,
+    "auth_tables" => $tables,
+  ]);
 }
 
 function handle_user_preferences_get(): void {

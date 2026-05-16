@@ -104,6 +104,17 @@ export function getAppContext() {
   return apiClient.get<{ app: unknown; tenant: unknown }>("app.context.get.php", "app-context");
 }
 
+export function getAuthDebug() {
+  return apiClient.get<{
+    bootstrap_loaded: boolean;
+    db_connected: boolean;
+    app_key: string;
+    app_recognized: boolean;
+    tenant_key?: string | null;
+    auth_tables: Record<string, { exists: boolean; columns: Record<string, boolean> }>;
+  }>("auth.debug.get.php");
+}
+
 export function getAppFeatures() {
   return apiClient.get<{ features: AppFeature[] }>("app.features.get.php", "app-features");
 }

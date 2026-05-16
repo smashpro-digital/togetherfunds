@@ -21,9 +21,10 @@ https://smashpro.app/api/v1/routes/expenses.get.php?couple_id=1
 1. Create a MySQL database for TogetherFunds.
 2. Run `sql/togetherfunds_schema.sql` in phpMyAdmin or the MySQL client.
 3. Run `sql/togetherfunds_seed.sql` to register `app_key = togetherfunds`, the `demo-couple` tenant, default features, default component configs, and demo couple data.
-4. Copy `config.example.php` to `config.local.php` on the server.
-5. Put real database credentials and a long random API key in `config.local.php`.
-6. Upload `.htaccess.example` as `.htaccess` if the host supports Apache overrides.
+4. If auth tables or user compatibility columns are missing on an existing database, run `sql/togetherfunds_auth_migration.sql`. It is rerunnable and import-safe.
+5. Copy `config.example.php` to `config.local.php` on the server.
+6. Put real database credentials and a long random API key in `config.local.php`.
+7. Upload `.htaccess.example` as `.htaccess` if the host supports Apache overrides.
 
 Do not commit `config.local.php`, `.env`, logs, or any production secrets.
 
@@ -36,6 +37,7 @@ Routes are explicit files under `v1/routes`:
 - `app.features.get.php`
 - `app.components.get.php`
 - `auth.register.post.php`, `auth.login.post.php`, `auth.me.get.php`, `auth.logout.post.php`, `auth.refresh.post.php`
+- `auth.debug.get.php`
 - `user.preferences.get.php`, `user.preferences.put.php`
 - `user.app-settings.get.php`, `user.app-settings.put.php`
 - `togetherfunds.couples.get.php`, `togetherfunds.couples.post.php`
@@ -85,6 +87,28 @@ TogetherFunds uses one SmashPro identity across apps:
 - `spd_tf_couple_invites` supports invite-code joins.
 
 Login endpoints still require `X-SmashPro-Api-Key` and `X-SmashPro-App-Key`. Authenticated user routes also require `Authorization: Bearer <session_token>`. Rate limiting for login/register should be added at the server or WAF layer before production.
+
+## Auth Debugging
+
+Use this endpoint after uploading API files:
+
+```text
+https://smashpro.app/api/v1/routes/auth.debug.get.php
+```
+
+Required headers:
+
+```text
+X-SmashPro-Api-Key: your-server-api-key
+X-SmashPro-App-Key: togetherfunds
+X-SmashPro-Tenant-Key: demo-couple
+```
+
+The response confirms bootstrap loading, DB connectivity, app key recognition, auth table presence, and required auth columns. If it reports missing auth tables or columns, import:
+
+```text
+api/sql/togetherfunds_auth_migration.sql
+```
 
 ## Plaid Security Notes
 

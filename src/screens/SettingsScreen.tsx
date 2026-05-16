@@ -8,7 +8,7 @@ import { MoneyRow } from "../components/MoneyRow";
 import { appConfig } from "../config/appConfig";
 import { RootStackParamList } from "../navigation/types";
 import { Screen } from "../components/Screen";
-import { getApiHealth, getAppFeatures } from "../services/togetherFundsApi";
+import { getApiHealth, getAppContext, getAppFeatures, getAuthDebug } from "../services/togetherFundsApi";
 import { useFunds } from "../state/FundsContext";
 import { useAuthStore } from "../store/authStore";
 import { setSyncMode, useSyncMode } from "../store/syncModeStore";
@@ -22,6 +22,7 @@ export function SettingsScreen() {
   const { activeAppKey, tenantKey, user, preferences, appSettings, logout } = useAuthStore();
   const { expenses, piggyBanks, resetDemoData } = useFunds();
   const [apiStatus, setApiStatus] = useState("Not checked");
+  const [authDebug, setAuthDebug] = useState("Not checked");
   const [features, setFeatures] = useState<string[]>([]);
 
   function confirmReset() {
@@ -40,6 +41,31 @@ export function SettingsScreen() {
     setFeatures(
       featureResult.data?.features.map((feature) => `${feature.feature_key}: ${feature.enabled ? "on" : "off"}`) ?? []
     );
+  }
+
+  async function checkAuthDebug() {
+    setAuthDebug("Checking...");
+    const [health, debug, context] = await Promise.all([getApiHealth(), getAuthDebug(), getAppContext()]);
+    const debugSummary = [
+      `health: ${health.status ?? "n/a"} ${health.error ?? health.data?.status ?? ""}`,
+      `auth.debug: ${debug.status ?? "n/a"} ${debug.error ?? ""}`,
+      `app.context: ${context.status ?? "n/a"} ${context.error ?? ""}`,
+      `base: ${appConfig.apiBaseUrl}`,
+      `register: ${appConfig.apiBaseUrl.replace(/\/$/, "")}/auth.register.post.php`,
+    ];
+
+    if (debug.data?.auth_tables) {
+      const missing = Object.entries(debug.data.auth_tables)
+        .flatMap(([table, info]) => {
+          if (!info.exists) return [`${table}: missing`];
+          return Object.entries(info.columns)
+            .filter(([, exists]) => !exists)
+            .map(([column]) => `${table}.${column}: missing`);
+        });
+      debugSummary.push(missing.length ? `missing: ${missing.join(", ")}` : "auth tables: ok");
+    }
+
+    setAuthDebug(debugSummary.join("\n"));
   }
 
   return (
@@ -78,6 +104,10 @@ export function SettingsScreen() {
           </View>
         ) : null}
         <AppButton label="Check API health" variant="secondary" onPress={checkApiHealth} />
+        <AppButton label="Auth Debug" variant="secondary" onPress={checkAuthDebug} />
+        <Text selectable style={styles.debugText}>
+          {authDebug}
+        </Text>
       </Card>
       <Card>
         <Text selectable style={styles.title}>
@@ -156,6 +186,11 @@ const styles = StyleSheet.create({
   },
   featureList: {
     gap: spacing.xs
+  },
+  debugText: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18
   },
   title: {
     color: colors.ink,

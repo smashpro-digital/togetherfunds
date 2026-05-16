@@ -6,7 +6,7 @@ import { Card } from "../components/Card";
 import { FormField } from "../components/FormField";
 import { Screen } from "../components/Screen";
 import { RootStackParamList } from "../navigation/types";
-import { useAuthStore } from "../store/authStore";
+import { getAuthSnapshot, useAuthStore } from "../store/authStore";
 import { colors } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
@@ -32,7 +32,7 @@ export function RegisterScreen({ navigation }: Props) {
     });
 
     if (!ok) {
-      Alert.alert("Could not register", error ?? "Try again.");
+      Alert.alert("Could not register", getAuthSnapshot().error ?? error ?? "Try again.");
     }
   }
 

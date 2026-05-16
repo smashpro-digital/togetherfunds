@@ -46,6 +46,10 @@ function emit(next: Partial<AuthState>) {
   listeners.forEach((listener) => listener());
 }
 
+export function getAuthSnapshot() {
+  return state;
+}
+
 function applyAuthPayload(payload: AuthPayload) {
   emit({
     user: payload.user,
