@@ -25,7 +25,7 @@ function require_app_key(): string {
 
 function resolve_app_context(bool $tenantRequired = true): array {
   $appKey = require_app_key();
-  $stmt = db()->prepare("SELECT * FROM spd_apps WHERE app_key = :app_key AND deleted_at IS NULL LIMIT 1");
+  $stmt = db()->prepare("SELECT * FROM spd_apps WHERE app_key = :app_key LIMIT 1");
   $stmt->execute([":app_key" => $appKey]);
   $app = $stmt->fetch();
   if (!$app) fail_json("Unknown app", 404, ["app_key" => $appKey]);
@@ -76,11 +76,11 @@ function require_tenant_context(): array {
 function require_feature_enabled(string $featureKey, ?array $context = null): void {
   $context = $context ?? require_tenant_context();
   $stmt = db()->prepare("
-    SELECT COALESCE(ff.enabled, f.enabled_by_default) AS enabled
+    SELECT COALESCE(ff.enabled, 1) AS enabled
     FROM spd_app_features f
     LEFT JOIN spd_app_feature_flags ff
-      ON ff.app_key = f.app_key AND ff.tenant_key = :tenant_key AND ff.feature_key = f.feature_key
-    WHERE f.app_key = :app_key AND f.feature_key = :feature_key AND f.deleted_at IS NULL
+      ON ff.app_slug = f.app_slug AND ff.tenant_key = :tenant_key AND ff.feature_code = f.code
+    WHERE f.app_slug = :app_key AND f.code = :feature_key
     LIMIT 1
   ");
   $stmt->execute([
@@ -180,12 +180,12 @@ function handle_app_context_get(): void {
 function handle_app_features_get(): void {
   $context = route_bootstrap("GET", true);
   $stmt = db()->prepare("
-    SELECT f.feature_key, f.name, f.description, COALESCE(ff.enabled, f.enabled_by_default) AS enabled
+    SELECT f.code AS feature_key, f.name, f.description, COALESCE(ff.enabled, 1) AS enabled
     FROM spd_app_features f
     LEFT JOIN spd_app_feature_flags ff
-      ON ff.app_key = f.app_key AND ff.tenant_key = :tenant_key AND ff.feature_key = f.feature_key
-    WHERE f.app_key = :app_key AND f.deleted_at IS NULL
-    ORDER BY f.feature_key
+      ON ff.app_slug = f.app_slug AND ff.tenant_key = :tenant_key AND ff.feature_code = f.code
+    WHERE f.app_slug = :app_key
+    ORDER BY f.code
   ");
   $stmt->execute([":app_key" => $context["app_key"], ":tenant_key" => $context["tenant_key"]]);
   json_ok(["features" => $stmt->fetchAll() ?: []]);
@@ -197,8 +197,8 @@ function handle_app_components_get(): void {
     SELECT r.component_key, r.name, r.description, c.config_json, COALESCE(c.enabled, 1) AS enabled
     FROM spd_app_component_registry r
     LEFT JOIN spd_app_component_configs c
-      ON c.app_key = r.app_key AND c.tenant_key = :tenant_key AND c.component_key = r.component_key
-    WHERE r.app_key = :app_key AND r.deleted_at IS NULL
+      ON c.app_slug = r.app_slug AND c.tenant_key = :tenant_key AND c.component_key = r.component_key
+    WHERE r.app_slug = :app_key AND r.deleted_at IS NULL
     ORDER BY r.component_key
   ");
   $stmt->execute([":app_key" => $context["app_key"], ":tenant_key" => $context["tenant_key"]]);

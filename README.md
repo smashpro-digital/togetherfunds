@@ -56,9 +56,11 @@ TogetherFunds is scaffolded to fit the SmashPro shared app architecture. The bac
 
 - `spd_apps` for reusable app registration with `app_key = togetherfunds`
 - `spd_app_tenants` for tenant/workspace scope with `tenant_key = demo-couple`
-- `spd_app_features` and `spd_app_feature_flags` for reusable feature gating
+- `spd_app_features` using SmashPro's `app_slug + code` convention
+- `spd_app_feature_flags` for tenant-level feature overrides
 - `spd_app_component_registry` and `spd_app_component_configs` for reusable app components
 - `spd_tf_*` tables for TogetherFunds-specific couples, expenses, envelopes, contributions, bank metadata, and transaction assignments
+- `spd_api_keys` and `spd_api_error_logs` for shared auth and API logging
 
 The Expo client sends these headers on server requests:
 
@@ -69,6 +71,8 @@ X-SmashPro-Tenant-Key: demo-couple
 ```
 
 Server Sync Mode in Settings shows the app key, tenant key, API health, and feature flags returned by the server.
+
+See `docs/architecture/togetherfunds-platform-integration.md` for the platform integration notes based on the SmashPro schema export.
 
 ## Sample Data
 
