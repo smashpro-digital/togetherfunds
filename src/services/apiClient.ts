@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appConfig } from "../config/appConfig";
 
-const DEFAULT_BASE_URL = "https://smashpro.app/api/v1/routes";
 const CACHE_PREFIX = "togetherfunds:api-cache:";
 
 type RequestOptions = {
@@ -14,8 +14,7 @@ export type ApiResult<T> = {
   error?: string;
 };
 
-const baseUrl = (process.env.EXPO_PUBLIC_TOGETHERFUNDS_API_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "");
-const apiKey = process.env.EXPO_PUBLIC_TOGETHERFUNDS_API_KEY || "";
+const baseUrl = appConfig.apiBaseUrl.replace(/\/$/, "");
 
 async function readCache<T>(cacheKey?: string): Promise<ApiResult<T>> {
   if (!cacheKey) {
@@ -43,7 +42,9 @@ async function request<T>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: s
       method,
       headers: {
         "Content-Type": "application/json",
-        "X-SmashPro-Api-Key": apiKey,
+        "X-SmashPro-Api-Key": appConfig.apiKey,
+        "X-SmashPro-App-Key": appConfig.appKey,
+        "X-SmashPro-Tenant-Key": appConfig.tenantKey,
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
@@ -69,6 +70,8 @@ async function request<T>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: s
 
 export const apiClient = {
   baseUrl,
+  appKey: appConfig.appKey,
+  tenantKey: appConfig.tenantKey,
   get: <T>(endpoint: string, cacheKey?: string) => request<T>("GET", endpoint, { cacheKey }),
   post: <T>(endpoint: string, body?: unknown, cacheKey?: string) => request<T>("POST", endpoint, { body, cacheKey }),
   put: <T>(endpoint: string, body?: unknown, cacheKey?: string) => request<T>("PUT", endpoint, { body, cacheKey }),

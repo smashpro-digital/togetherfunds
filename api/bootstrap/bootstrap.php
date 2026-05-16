@@ -54,6 +54,8 @@ require_once __DIR__ . "/response.php";
 require_once __DIR__ . "/config_loader.php";
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/logger.php";
+require_once __DIR__ . "/auth.php";
+require_once __DIR__ . "/app_context.php";
 
 global $pdo, $correlationId;
 

@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppButton } from "../components/AppButton";
 import { Card } from "../components/Card";
 import { MoneyRow } from "../components/MoneyRow";
+import { appConfig } from "../config/appConfig";
 import { RootStackParamList } from "../navigation/types";
 import { Screen } from "../components/Screen";
+import { getApiHealth, getAppFeatures } from "../services/togetherFundsApi";
 import { useFunds } from "../state/FundsContext";
 import { setSyncMode, useSyncMode } from "../store/syncModeStore";
 import { colors, radii, spacing } from "../theme";
@@ -16,12 +19,25 @@ export function SettingsScreen() {
   const navigation = useNavigation<Navigation>();
   const { mode } = useSyncMode();
   const { expenses, piggyBanks, resetDemoData } = useFunds();
+  const [apiStatus, setApiStatus] = useState("Not checked");
+  const [features, setFeatures] = useState<string[]>([]);
 
   function confirmReset() {
     Alert.alert("Reset demo data?", "This restores the sample TogetherFunds expenses and piggy bank.", [
       { text: "Cancel", style: "cancel" },
       { text: "Reset", style: "destructive", onPress: resetDemoData }
     ]);
+  }
+
+  async function checkApiHealth() {
+    setApiStatus("Checking...");
+    const health = await getApiHealth();
+    const featureResult = await getAppFeatures();
+
+    setApiStatus(health.data?.status ? `${health.data.status}${health.fromCache ? " (cached)" : ""}` : health.error ?? "Unavailable");
+    setFeatures(
+      featureResult.data?.features.map((feature) => `${feature.feature_key}: ${feature.enabled ? "on" : "off"}`) ?? []
+    );
   }
 
   return (
@@ -40,6 +56,8 @@ export function SettingsScreen() {
         <Text selectable style={styles.title}>
           Sync mode
         </Text>
+        <MoneyRow label="App Key" value={appConfig.appKey} />
+        <MoneyRow label="Tenant Key" value={appConfig.tenantKey} />
         <Text selectable style={styles.body}>
           Local Demo Mode keeps Expo Go fully offline. Server Sync Mode prepares the app to call the SmashPro PHP API.
         </Text>
@@ -47,6 +65,17 @@ export function SettingsScreen() {
           <ModeOption label="Local Demo Mode" selected={mode === "local"} onPress={() => setSyncMode("local")} />
           <ModeOption label="Server Sync Mode" selected={mode === "server"} onPress={() => setSyncMode("server")} />
         </View>
+        <MoneyRow label="API Health Check" value={apiStatus} />
+        {features.length > 0 ? (
+          <View style={styles.featureList}>
+            {features.map((feature) => (
+              <Text selectable key={feature} style={styles.feature}>
+                {feature}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+        <AppButton label="Check API health" variant="secondary" onPress={checkApiHealth} />
       </Card>
       <Card>
         <Text selectable style={styles.title}>
@@ -103,6 +132,14 @@ const styles = StyleSheet.create({
   segment: {
     flexDirection: "row",
     gap: spacing.sm
+  },
+  feature: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19
+  },
+  featureList: {
+    gap: spacing.xs
   },
   title: {
     color: colors.ink,

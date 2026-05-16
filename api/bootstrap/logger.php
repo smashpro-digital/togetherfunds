@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * logger.php
- * Best-effort logging of API errors to spd_api_error_logs.
+ * Best-effort logging of API errors to spd_tf_api_errors.
  * Never breaks the API response if logging fails.
  */
 
@@ -24,7 +24,7 @@ function redact_headers(array $headers): array {
 
 function ensure_api_error_logs_table(PDO $pdo): void {
   $pdo->exec("
-    CREATE TABLE IF NOT EXISTS spd_api_error_logs (
+    CREATE TABLE IF NOT EXISTS spd_tf_api_errors (
       id INT UNSIGNED NOT NULL AUTO_INCREMENT,
       correlation_id VARCHAR(64) NULL,
       endpoint VARCHAR(128) NULL,
@@ -53,7 +53,7 @@ function log_api_error(?PDO $pdo, array $row): void {
     if ($create) ensure_api_error_logs_table($pdo);
 
     $stmt = $pdo->prepare("
-      INSERT INTO spd_api_error_logs
+      INSERT INTO spd_tf_api_errors
         (correlation_id, endpoint, error_type, message, stack_trace,
          request_headers, request_body, ip_address, user_agent)
       VALUES
@@ -73,6 +73,6 @@ function log_api_error(?PDO $pdo, array $row): void {
       ":user_agent"     => $row["user_agent"] ?? null,
     ]);
   } catch (Throwable $e) {
-    error_log("[spd_api_error_logs] insert failed: " . $e->getMessage());
+    error_log("[spd_tf_api_errors] insert failed: " . $e->getMessage());
   }
 }

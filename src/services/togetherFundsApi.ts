@@ -81,48 +81,79 @@ function piggyBankPayload(input: PiggyBankInput, coupleId = DEFAULT_COUPLE_ID) {
   };
 }
 
+type AppFeature = {
+  feature_key: string;
+  name: string;
+  description?: string | null;
+  enabled: number | boolean;
+};
+
+type AppComponent = {
+  component_key: string;
+  name: string;
+  description?: string | null;
+  config_json?: string | null;
+  enabled: number | boolean;
+};
+
+export function getApiHealth() {
+  return apiClient.get<{ status: string; service: string }>("health.get.php", "health");
+}
+
+export function getAppContext() {
+  return apiClient.get<{ app: unknown; tenant: unknown }>("app.context.get.php", "app-context");
+}
+
+export function getAppFeatures() {
+  return apiClient.get<{ features: AppFeature[] }>("app.features.get.php", "app-features");
+}
+
+export function getAppComponents() {
+  return apiClient.get<{ components: AppComponent[] }>("app.components.get.php", "app-components");
+}
+
 export async function getExpenses(coupleId = DEFAULT_COUPLE_ID): Promise<ApiResult<Expense[]>> {
-  const result = await apiClient.get<{ expenses: ExpenseRow[] }>(`expenses.get.php?couple_id=${coupleId}`, `expenses:${coupleId}`);
+  const result = await apiClient.get<{ expenses: ExpenseRow[] }>(`togetherfunds.expenses.get.php?couple_id=${coupleId}`, `expenses:${coupleId}`);
   return { ...result, data: result.data?.expenses.map(toExpense) ?? null };
 }
 
 export function createExpense(input: ExpenseInput, coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.post<{ id: number }>("expenses.post.php", expensePayload(input, coupleId), `expenses:${coupleId}`);
+  return apiClient.post<{ id: number }>("togetherfunds.expenses.post.php", expensePayload(input, coupleId), `expenses:${coupleId}`);
 }
 
 export function updateExpense(id: string, input: ExpenseInput, coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.put<{ id: number }>("expenses.put.php", { id: Number(id), ...expensePayload(input, coupleId) }, `expenses:${coupleId}`);
+  return apiClient.put<{ id: number }>("togetherfunds.expenses.put.php", { id: Number(id), ...expensePayload(input, coupleId) }, `expenses:${coupleId}`);
 }
 
 export function deleteExpense(id: string, coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.delete<{ id: number }>("expenses.delete.php", { id: Number(id) }, `expenses:${coupleId}`);
+  return apiClient.delete<{ id: number }>("togetherfunds.expenses.delete.php", { id: Number(id) }, `expenses:${coupleId}`);
 }
 
 export async function getPiggyBanks(coupleId = DEFAULT_COUPLE_ID): Promise<ApiResult<PiggyBank[]>> {
-  const result = await apiClient.get<{ piggy_banks: PiggyBankRow[] }>(`piggy-banks.get.php?couple_id=${coupleId}`, `piggy-banks:${coupleId}`);
+  const result = await apiClient.get<{ piggy_banks: PiggyBankRow[] }>(`togetherfunds.piggy-banks.get.php?couple_id=${coupleId}`, `piggy-banks:${coupleId}`);
   return { ...result, data: result.data?.piggy_banks.map(toPiggyBank) ?? null };
 }
 
 export function createPiggyBank(input: PiggyBankInput, coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.post<{ id: number }>("piggy-banks.post.php", piggyBankPayload(input, coupleId), `piggy-banks:${coupleId}`);
+  return apiClient.post<{ id: number }>("togetherfunds.piggy-banks.post.php", piggyBankPayload(input, coupleId), `piggy-banks:${coupleId}`);
 }
 
 export function updatePiggyBank(id: string, input: PiggyBankInput, coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.put<{ id: number }>("piggy-banks.put.php", { id: Number(id), ...piggyBankPayload(input, coupleId) }, `piggy-banks:${coupleId}`);
+  return apiClient.put<{ id: number }>("togetherfunds.piggy-banks.put.php", { id: Number(id), ...piggyBankPayload(input, coupleId) }, `piggy-banks:${coupleId}`);
 }
 
 export function deletePiggyBank(id: string, coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.delete<{ id: number }>("piggy-banks.delete.php", { id: Number(id) }, `piggy-banks:${coupleId}`);
+  return apiClient.delete<{ id: number }>("togetherfunds.piggy-banks.delete.php", { id: Number(id) }, `piggy-banks:${coupleId}`);
 }
 
 export function getContributions(coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.get<{ contributions: unknown[] }>(`contributions.get.php?couple_id=${coupleId}`, `contributions:${coupleId}`);
+  return apiClient.get<{ contributions: unknown[] }>(`togetherfunds.contributions.get.php?couple_id=${coupleId}`, `contributions:${coupleId}`);
 }
 
 export function createContribution(input: ContributionInput) {
   const coupleId = input.coupleId ?? DEFAULT_COUPLE_ID;
   return apiClient.post<{ id: number }>(
-    "contributions.post.php",
+    "togetherfunds.contributions.post.php",
     {
       couple_id: coupleId,
       partner_id: input.partnerId,
@@ -137,17 +168,17 @@ export function createContribution(input: ContributionInput) {
 }
 
 export function getBankAccounts(coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.get<{ bank_accounts: BankAccount[] }>(`bank-accounts.get.php?couple_id=${coupleId}`, `bank-accounts:${coupleId}`);
+  return apiClient.get<{ bank_accounts: BankAccount[] }>(`togetherfunds.bank-accounts.get.php?couple_id=${coupleId}`, `bank-accounts:${coupleId}`);
 }
 
 export function getTransactions(coupleId = DEFAULT_COUPLE_ID) {
-  return apiClient.get<{ transactions: BankTransaction[] }>(`transactions.get.php?couple_id=${coupleId}`, `transactions:${coupleId}`);
+  return apiClient.get<{ transactions: BankTransaction[] }>(`togetherfunds.transactions.get.php?couple_id=${coupleId}`, `transactions:${coupleId}`);
 }
 
 export function assignTransaction(input: TransactionAssignmentInput) {
   const coupleId = input.coupleId ?? DEFAULT_COUPLE_ID;
   return apiClient.post<{ id: number }>(
-    "transactions.assign.post.php",
+    "togetherfunds.transactions.assign.post.php",
     {
       couple_id: coupleId,
       transaction_id: Number(input.transactionId),
