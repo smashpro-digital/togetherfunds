@@ -90,6 +90,7 @@ export function DashboardScreen() {
       <View style={styles.actions}>
         <AppButton label="Add expense" onPress={() => navigation.navigate("ExpenseForm")} />
         <AppButton label="Add piggy bank" variant="secondary" onPress={() => navigation.navigate("PiggyBankForm")} />
+        <AppButton label="Connect bank account" variant="secondary" onPress={() => navigation.navigate("BankSync")} />
       </View>
     </Screen>
   );

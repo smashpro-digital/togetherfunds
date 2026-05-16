@@ -1,5 +1,6 @@
 export type RootStackParamList = {
   Tabs: undefined;
+  BankSync: undefined;
   ExpenseForm: { expenseId?: string } | undefined;
   PiggyBankForm: { piggyBankId?: string } | undefined;
   Contribution: { piggyBankId?: string } | undefined;

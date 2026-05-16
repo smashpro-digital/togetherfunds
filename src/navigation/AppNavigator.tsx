@@ -2,6 +2,7 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { colors } from "../theme";
+import { BankSyncScreen } from "../screens/BankSyncScreen";
 import { ContributionScreen } from "../screens/ContributionScreen";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { ExpenseFormScreen } from "../screens/ExpenseFormScreen";
@@ -60,6 +61,7 @@ export function AppNavigator() {
         }}
       >
         <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+        <Stack.Screen name="BankSync" component={BankSyncScreen} options={{ title: "Bank Sync" }} />
         <Stack.Screen name="ExpenseForm" component={ExpenseFormScreen} options={{ title: "Expense" }} />
         <Stack.Screen name="PiggyBankForm" component={PiggyBankFormScreen} options={{ title: "Piggy Bank" }} />
         <Stack.Screen name="Contribution" component={ContributionScreen} options={{ title: "Add Contribution" }} />

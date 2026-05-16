@@ -20,8 +20,35 @@ Open Expo Go on your phone and scan the QR code shown by Expo.
 - Add and edit piggy bank forms
 - Partner contribution tracking
 - Partner summary
+- Plaid Sandbox-ready bank sync mock
+- Recent transaction assignment mock
 - AsyncStorage persistence
 - Demo data reset
+
+## Plaid Sandbox Bank Sync
+
+The Bank Sync screen is a sandbox-ready architecture for Plaid integration. The current MVP uses mock data only so Expo Go remains runnable with:
+
+```bash
+npm install
+npx expo start --tunnel
+```
+
+Security rules for production:
+
+- Plaid Link must be used on the client. Do not ask users for bank usernames or passwords directly.
+- The Plaid `public_token` must be exchanged for an `access_token` on a secure backend.
+- The Plaid `access_token` must never be stored in AsyncStorage or on the device.
+- Backend services should handle all Plaid API calls and return only safe account metadata and app-ready transaction data.
+- Add a Firebase, Supabase, or Node backend before connecting real financial institutions.
+
+The local mock stores only sandbox account metadata and mock transactions:
+
+- Institution name
+- Account name and type
+- Last 4 digits
+- Current/available balances when provided
+- Last synced time
 
 ## Sample Data
 
